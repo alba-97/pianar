@@ -238,6 +238,7 @@
             if (player) {
                 if (player.knob.status === "time") {
                     player.knob.time = constrain(mouseX, width * 0.3, width * 0.75);
+                    time = map(player.knob.time, width * 0.3, width * 0.75, -10000, maxTime);
                 } else if (player.knob.status === "speed") {
                     player.knob.speed = constrain(mouseX, width * 0.3, width * 0.4);
                     speed = map(player.knob.speed, width * 0.3, width * 0.4, 5, 100);
@@ -254,9 +255,9 @@
                     player.knob.time = constrain(mouseX, width * 0.3, width * 0.75);
                     time = map(player.knob.time, width * 0.3, width * 0.75, -10000, maxTime);
                     if (demo) {
-                        notes = JSON.parse(JSON.stringify(musicNotes));
                         demo = false;
                     }
+                    notes = JSON.parse(JSON.stringify(musicNotes));
                 } else if (player.knob.status === "speed") {
                     player.knob.speed = constrain(mouseX, width * 0.3, width * 0.4);
                     speed = map(player.knob.speed, width * 0.3, width * 0.4, 5, 100);
