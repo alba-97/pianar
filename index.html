@@ -64,11 +64,10 @@
             strokeWeight(3);
             strokeCap(ROUND);
 
-            if (!mouseIsPressed) {
-                player.knob.time = map(time, -10000, maxTime, width * 0.3, width * 0.75);
-                player.knob.speed = map(speed, 5, 100, width * 0.3, width * 0.4);
-                player.knob.opacity = map(opacity, 0, 255, width * 0.65, width * 0.75);
-            }
+            player.knob.time = map(time, -10000, maxTime, width * 0.3, width * 0.75);
+            player.knob.speed = map(speed, 5, 100, width * 0.3, width * 0.4);
+            player.knob.opacity = map(opacity, 0, 255, width * 0.65, width * 0.75);
+            
             line(width * 0.3, height - height * 0.2, width * 0.75, height - height * 0.2);
             ellipse(player.knob.time, height - height * 0.2, 8, 8);
 
