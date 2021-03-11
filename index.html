@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -50,9 +51,12 @@
 
         function draw_player() {
             time += speed * (player.play.isPlaying ? 1 : 0);
-            
+            if (time >= maxTime) {
+                time = -10000;
+                notes = JSON.parse(JSON.stringify(musicNotes));
+                player.play.isPlaying = false;
+            }
             noStroke();
-            text(time,128,64);
             player.color.current = lerpColor(player.color.current, player.color.target, 0.33);
             fill(player.color.current);
 
@@ -83,16 +87,15 @@
             text("Speed", width * 0.3-player.fontSize, height - height * 0.15);
             text("Opacity", width * 0.65-player.fontSize, height - height * 0.15);
 
-
             player.play.pos.set(width * 0.3-player.fontSize-20, height - height * 0.2);
             if (!player.play.isPlaying) {
-                triangle(player.play.pos.x, player.play.pos.y - player.play.size, player.play.pos.x, player.play.pos.y + player.play.size, player.play.pos.x + player.play.size*2, player.play.pos.y);
+                triangle(player.play.pos.x - player.play.size, player.play.pos.y - player.play.size, player.play.pos.x - player.play.size, player.play.pos.y + player.play.size, player.play.pos.x + player.play.size, player.play.pos.y);
             } else {
-                strokeWeight(4);
+                strokeWeight(10);
                 strokeCap(SQUARE);
                 stroke(player.color.current);
-                line(player.play.pos.x + player.play.size/2, player.play.pos.y - player.play.size, player.play.pos.x + player.play.size/2, player.play.pos.y + player.play.size);
-                line(player.play.pos.x + player.play.size*1.5, player.play.pos.y - player.play.size, player.play.pos.x + player.play.size*1.5, player.play.pos.y + player.play.size);
+                line(player.play.pos.x - player.play.size, player.play.pos.y - player.play.size, player.play.pos.x - player.play.size, player.play.pos.y + player.play.size);
+                line(player.play.pos.x + player.play.size, player.play.pos.y - player.play.size, player.play.pos.x + player.play.size, player.play.pos.y + player.play.size);
             }
         }
 
@@ -218,7 +221,7 @@
                     player.knob.status = "opacity";
                 }
 
-                if (mouseX > player.play.pos.x && mouseX < player.play.pos.x + player.play.size && mouseY > player.play.pos.y - player.play.size && mouseY < player.play.pos.y + player.play.size) {
+                if (mouseX > player.play.pos.x - player.play.size && mouseX < player.play.pos.x + player.play.size && mouseY > player.play.pos.y - player.play.size && mouseY < player.play.pos.y + player.play.size) {
                     if (!player.play.isPlaying) {
                         player.play.isPlaying = true;
                         if (demo) {
