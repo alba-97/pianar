@@ -117,8 +117,10 @@
             if (file.type == "audio" && file.subtype == "mid") {
                 removeElements();
                 cnv = createCanvas(window.innerWidth, window.innerHeight);
+                print(1);
                 var midi = await Midi.fromUrl(file.data);
                 musicNotes = [];
+                print(midi);
                 for (var i = 0; i < midi.tracks.length; i++) {
                     if (midi.tracks[i].notes.length > 0) {
                         for (var j = 0; j < midi.tracks[i].notes.length; j++) {
