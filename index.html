@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script src="p5.min.js"></script>
+    <script src="Midi.js"></script>
+    <script>
+        var input;
+        var cnv;
+        var label;
+
+        var notes;
+        var noteMin = 120;
+        var noteMax = 0;
+
+        var speed = 25;
+        var time = -10000;
+        var opacity = 255;
+
+        var piano = false;
+        var demo = false;
+
+        var demoNotes = [];
+        var musicNotes = [];
+
+        var player;
+
+        var posX = 0;
+        var pad = 0;
+        var counter = 0;
+
+        var fontSize;
+        var maxTime;
+
+        var selected = false;
+        var selectColor;
+
+        document.oncontextmenu = function () {
+            return false;
+        }
+
+        function draw_player() {
+            time += speed * (player.play.isPlaying ? 1 : 0);
+            noStroke();
+            player.color.current = lerpColor(player.color.current, player.color.target, 0.33);
+            fill(player.color.current);
+
+            stroke(player.color.current);
+            strokeWeight(3);
+            strokeCap(ROUND);
+
+            if (!mouseIsPressed) {
+                player.knob.time = map(time, -10000, maxTime, width * 0.3, width * 0.75);
+                player.knob.speed = map(speed, 5, 100, width * 0.3, width * 0.4);
+                player.knob.opacity = map(opacity, 0, 255, width * 0.65, width * 0.75);
+            }
+            line(width * 0.3, height - height * 0.2, width * 0.75, height - height * 0.2);
+            ellipse(player.knob.time, height - height * 0.2, 8, 8);
+
+            stroke(player.color.current);
+            strokeWeight(2);
+            line(width * 0.3, height - height * 0.15, width * 0.4, height - height * 0.15);
+            ellipse(player.knob.speed, height - height * 0.15, 8, 8);
+
+            line(width * 0.65, height - height * 0.15, width * 0.75, height - height * 0.15);
+            ellipse(player.knob.opacity, height - height * 0.15, 8, 8);
+
+            noStroke();
+            textSize(player.fontSize);
+            textAlign(RIGHT);
+            fill(player.color.current);
+            text("Speed", width * 0.3-player.fontSize, height - height * 0.15);
+            text("Opacity", width * 0.65-player.fontSize, height - height * 0.15);
+
+
+            player.play.pos.set(width * 0.3-player.fontSize-20, height - height * 0.2);
+            if (!player.play.isPlaying) {
+                triangle(player.play.pos.x, player.play.pos.y - player.play.size, player.play.pos.x, player.play.pos.y + player.play.size, player.play.pos.x + player.play.size*2, player.play.pos.y);
+            } else {
+                strokeWeight(4);
+                strokeCap(SQUARE);
+                stroke(player.color.current);
+                line(player.play.pos.x + player.play.size/2, player.play.pos.y - player.play.size, player.play.pos.x + player.play.size/2, player.play.pos.y + player.play.size);
+                line(player.play.pos.x + player.play.size*1.5, player.play.pos.y - player.play.size, player.play.pos.x + player.play.size*1.5, player.play.pos.y + player.play.size);
+            }
+        }
+
+        function setup() {
+            selectColor = color(25, 25, 25);
+            frameRate(60);
+            input = createFileInput(handleFile);
+            cnv = createCanvas(window.innerWidth, window.innerHeight);
+            cnv.mouseOver(function () {
+                selected = true;
+            });
+            cnv.mouseOut(function () {
+                selected = false;
+            })
+            label = createElement("label");
+            cnv.parent(label);
+            input.parent(label);
+            input.hide();
+            update_font();
+        }
+
+        async function handleFile(file) {
+            if (file.type == "audio" && file.subtype == "mid") {
+                removeElements();
+                cnv = createCanvas(window.innerWidth, window.innerHeight);
+                var midi = await Midi.fromUrl(file.data);
+                musicNotes = [];
+                for (var i = 0; i < midi.tracks.length; i++) {
+                    if (midi.tracks[i].notes.length > 0) {
+                        for (var j = 0; j < midi.tracks[i].notes.length; j++) {
+                            var note = midi.tracks[i].notes[j];
+                            if (note.midi > noteMax) {
+                                noteMax = note.midi;
+                            }
+                            if (note.midi < noteMin) {
+                                noteMin = note.midi;
+                            }
+                            musicNotes.push({ midi: note.midi, ticks: note.ticks, durationTicks: note.durationTicks });
+                        }
+                    }
+                }
+                musicNotes.sort(function (a, b) {
+                    return a.ticks - b.ticks;
+                });
+                maxTime = musicNotes[musicNotes.length - 1].ticks + musicNotes[musicNotes.length - 1].durationTicks;
+                for (var i = noteMin; i < noteMax; i++) {
+                    demoNotes.push({ midi: i, ticks: -10000, durationTicks: 1000 });
+                }
+                openFullscreen(cnv.elt);
+                if (cnv.elt.fullscreenElement) {
+                    resizeCanvas(screen.width, screen.height);
+                }
+
+                player = {
+                    color: {
+                        current: color(150, 150, 150, 255),
+                        target: color(150, 150, 150, 255)
+                    }, play: { pos: createVector(0, 0), isPlaying: false, size: 10 },
+                    knob: { time, speed, opacity, status: "" }, fontSize: 0
+                };
+
+                demo = true;
+                piano = true;
+                notes = JSON.parse(JSON.stringify(demoNotes));
+            }
+        }
+        function openFullscreen(elem) {
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.mozRequestFullScreen) {
+                elem.mozRequestFullScreen();
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+
+        function update_font() {
+            if (cnv) {
+                if (cnv.width < 480) {
+                    if (player) {
+                        player.fontSize = 8;
+                        player.play.size = 5;
+                    }
+                    fontSize = cnv.width/12;
+                } else if (cnv.width < 768) {
+                    if (player) {
+                        player.fontSize = 16;
+                        player.play.size = 10;
+                    }
+                    fontSize = 36;
+                } else {
+                    if (player) {
+                        player.fontSize = cnv.width/64;
+                        player.play.size = 10;
+                    }
+                    fontSize = cnv.width/16;
+                }
+                if (cnv.elt.fullscreenElement) {
+                    resizeCanvas(screen.width, screen.height);
+                }
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(window.innerWidth, window.innerHeight)
+            update_font();
+        }
+
+        function mousePressed() {
+            if (mouseButton == CENTER) {
+                return false;
+            }
+            if (player) {
+                if (mouseX > width * 0.3 && mouseX < width * 0.75 && dist(0, mouseY, 0, height - height * 0.2) < 8) {
+                    player.knob.status = "time";
+                } else if (mouseX > width * 0.3 && mouseX < width * 0.4 && dist(0, mouseY, 0, height - height * 0.15) < 8) {
+                    player.knob.status = "speed";
+                } else if (mouseX > width * 0.65 && mouseX < width * 0.75 && dist(0, mouseY, 0, height - height * 0.15) < 8) {
+                    player.knob.status = "opacity";
+                }
+
+                if (mouseX > player.play.pos.x && mouseX < player.play.pos.x + player.play.size && mouseY > player.play.pos.y - player.play.size && mouseY < player.play.pos.y + player.play.size) {
+                    if (!player.play.isPlaying) {
+                        player.play.isPlaying = true;
+                        if (demo) {
+                            notes = JSON.parse(JSON.stringify(musicNotes));
+                            demo = false;
+                        }
+                    } else {
+                        player.play.isPlaying = false;
+                    }
+                }
+            }
+        }
+
+        function mouseDragged() {
+            if (player) {
+                if (player.knob.status === "time") {
+                    player.knob.time = constrain(mouseX, width * 0.3, width * 0.75);
+                } else if (player.knob.status === "speed") {
+                    player.knob.speed = constrain(mouseX, width * 0.3, width * 0.4);
+                    speed = map(player.knob.speed, width * 0.3, width * 0.4, 5, 100);
+                } else if (player.knob.status === "opacity") {
+                    player.knob.opacity = constrain(mouseX, width * 0.65, width * 0.75);
+                    opacity = map(player.knob.opacity, width * 0.65, width * 0.75, 0, 255);
+                }
+            }
+        }
+
+        function mouseReleased() {
+            if (player) {
+                if (player.knob.status === "time") {
+                    player.knob.time = constrain(mouseX, width * 0.3, width * 0.75);
+                    time = map(player.knob.time, width * 0.3, width * 0.75, -10000, maxTime);
+                    notes = JSON.parse(JSON.stringify(musicNotes));
+                    if (demo) {
+                        notes = JSON.parse(JSON.stringify(musicNotes));
+                        demo = false;
+                    }
+                } else if (player.knob.status === "speed") {
+                    player.knob.speed = constrain(mouseX, width * 0.3, width * 0.4);
+                    speed = map(player.knob.speed, width * 0.3, width * 0.4, 5, 100);
+                } else if (player.knob.status === "opacity") {
+                    player.knob.opacity = constrain(mouseX, width * 0.65, width * 0.75);
+                    opacity = map(player.knob.opacity, width * 0.65, width * 0.75, 0, 255);
+                }
+                player.knob.status = "";
+            }
+        }
+
+        function mouseMoved() {
+            if (piano) {
+                if (mouseY > height * 0.75) {
+                    player.color.target = color(150, 150, 150, 255);
+                } else {
+                    player.color.target = color(50, 50, 50, 0);
+                }
+                counter = 0;
+                cursor(ARROW);
+            }
+        }
+
+        function draw() {
+            background(50);
+            if (piano) {
+                if (frameCount % 60 == 0) {
+                    counter++;
+                }
+                if (counter > 2) {
+                    noCursor();
+                    counter = 0;
+                }
+                var w = map(noteMin + 1, noteMin, noteMax, width - pad, pad) - map(noteMin + 2, noteMin, noteMax, width - pad, pad);
+                var c = 0;
+                if (demo) {
+                    draw_player();
+                }
+                strokeCap(SQUARE);
+                for (var i = 0; i < notes.length; i++) {
+                    var n = notes[i].midi % 12;
+                    if (n == 0 || n == 2 || n == 4 || n == 5 || n == 7 || n == 9 || n == 11) {
+                        strokeWeight((w + w / 2) * 0.65);
+                        stroke(255, opacity);
+                    } else {
+                        strokeWeight((w / 2) * 1.65);
+                        stroke(0, opacity);
+                    }
+                    var x = map(notes[i].midi, noteMin, noteMax, pad, width - pad);
+                    var y = map(notes[i].ticks - time, 0, 10000, height, 0);
+                    var h = map(notes[i].durationTicks, 0, 10000, 0, height);
+                    if (y - h > height) {
+                        notes.splice(i, 1);
+                        i--;
+                        continue;
+                    } else if (y + h < 0) {
+                        c++;
+                        continue;
+                    }
+                    if (c >= 20) {
+                        break;
+                    }
+                    line(posX + x, y, posX + x, y - h + 5);
+                }
+                if (demo) {
+                    if (mouseIsPressed && mouseY > height) {
+                        if (mouseButton === LEFT) {
+                            pad += mouseX - pmouseX;
+                        } else {
+                            posX += mouseX - pmouseX;
+                        }
+                    }
+
+                    noStroke();
+                    textAlign(CENTER, CENTER);
+                    textSize(fontSize*0.5);
+                    fill(150);
+                    text("Press left click on the keyboard to resize it", width / 2, height / 2-fontSize);
+                    text("Press right click to change its position", width / 2, height / 2);
+                    text("After calibrating, press the play button", width / 2, height / 2 + fontSize);
+                } else {
+                    draw_player();
+                }
+            } else {
+                textAlign(CENTER, CENTER);
+                textSize(fontSize);
+                text("Click to load MIDI", width / 2, height / 2);
+                if (selected) {
+                    selectColor = lerpColor(selectColor, color(100, 100, 100), 0.1);
+                } else {
+                    selectColor = lerpColor(selectColor, color(25, 25, 25), 0.1);
+                }
+                fill(selectColor);
+            }
+        }
+    </script>
+    <title>Pianar</title>
+
+</head>
+
+<body>
+
+</body>
+
+</html>
