@@ -138,6 +138,7 @@
                 });
                 maxTime = musicNotes[musicNotes.length - 1].ticks + musicNotes[musicNotes.length - 1].durationTicks;
                 print(maxTime);
+                print(file);
                 for (var i = noteMin; i < noteMax; i++) {
                     demoNotes.push({ midi: i, ticks: -10000, durationTicks: 1000 });
                 }
