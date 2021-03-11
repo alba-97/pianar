@@ -32,7 +32,6 @@
 
         var demoNotes = [];
         var musicNotes = [];
-        console.log('5');
         var player;
 
         var posX = 0;
@@ -96,7 +95,6 @@
         }
 
         function setup() {
-            print(4);
             selectColor = color(25, 25, 25);
             frameRate(60);
             input = createFileInput(handleFile);
@@ -115,15 +113,11 @@
         }
 
         async function handleFile(file) {
-            print(2);
-            print(file);
-            if (file.type == "audio" && file.subtype == "mid") {
+            if (file.type == "audio" && (file.subtype == "mid" || file.subtype == "midi")) {
                 removeElements();
                 cnv = createCanvas(window.innerWidth, window.innerHeight);
-                print(1);
                 var midi = await Midi.fromUrl(file.data);
                 musicNotes = [];
-                print(midi);
                 for (var i = 0; i < midi.tracks.length; i++) {
                     if (midi.tracks[i].notes.length > 0) {
                         for (var j = 0; j < midi.tracks[i].notes.length; j++) {
