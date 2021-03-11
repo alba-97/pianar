@@ -319,7 +319,7 @@
                     line(posX + x, y, posX + x, y - h + 5);
                 }
                 if (demo) {
-                    if (mouseIsPressed && mouseY > height) {
+                    if (mouseIsPressed && mouseY > height*0.9) {
                         if (mouseButton === LEFT) {
                             pad += mouseX - pmouseX;
                         } else {
