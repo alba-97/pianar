@@ -50,8 +50,9 @@
 
         function draw_player() {
             time += speed * (player.play.isPlaying ? 1 : 0);
-            text(time,64,64);
+            
             noStroke();
+            text(time,128,64);
             player.color.current = lerpColor(player.color.current, player.color.target, 0.33);
             fill(player.color.current);
 
