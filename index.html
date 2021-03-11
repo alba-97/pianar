@@ -50,6 +50,7 @@
 
         function draw_player() {
             time += speed * (player.play.isPlaying ? 1 : 0);
+            text(time,64,64);
             noStroke();
             player.color.current = lerpColor(player.color.current, player.color.target, 0.33);
             fill(player.color.current);
@@ -137,8 +138,6 @@
                     return a.ticks - b.ticks;
                 });
                 maxTime = musicNotes[musicNotes.length - 1].ticks + musicNotes[musicNotes.length - 1].durationTicks;
-                print(maxTime);
-                print(musicNotes);
                 for (var i = noteMin; i < noteMax; i++) {
                     demoNotes.push({ midi: i, ticks: -10000, durationTicks: 1000 });
                 }
