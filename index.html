@@ -114,6 +114,7 @@
         }
 
         async function handleFile(file) {
+            print(2);
             if (file.type == "audio" && file.subtype == "mid") {
                 removeElements();
                 cnv = createCanvas(window.innerWidth, window.innerHeight);
