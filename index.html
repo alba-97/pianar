@@ -251,7 +251,6 @@
                 if (player.knob.status === "time") {
                     player.knob.time = constrain(mouseX, width * 0.3, width * 0.75);
                     time = map(player.knob.time, width * 0.3, width * 0.75, -10000, maxTime);
-                    notes = JSON.parse(JSON.stringify(musicNotes));
                     if (demo) {
                         notes = JSON.parse(JSON.stringify(musicNotes));
                         demo = false;
